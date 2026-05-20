@@ -152,6 +152,7 @@
             <div class="admin-tab" onclick="switchAdminTab('supervisor')">督工</div>
             <div class="admin-tab" onclick="switchAdminTab('records')">记录</div>
           </div>
+
           <div class="admin-tab-content active" id="tab-dashboard">
             <button onclick="loadDashboard()" style="width:100%;padding:10px;margin-bottom:12px;">🔄 刷新数据</button>
             <div class="dashboard-stats" id="dashboardStats"></div>
@@ -403,7 +404,7 @@ function switchAdminTab(tab) {
   if (tab === 'map') setTimeout(initMap, 100);
 }
 
-// ★★★ 终极版：GET 方式添加 ★★★
+// ★ 添加（GET 方式）
 async function addListItem(type) {
   const map = { trade:['newTrade','addTrade'], area:['newArea','addArea'], supervisor:['newSupervisor','addSupervisor'] };
   const input = document.getElementById(map[type][0]);
@@ -427,13 +428,29 @@ async function addListItem(type) {
   }
 }
 
+// ★ 删除（GET 方式）
 async function deleteListItem(type, name) {
   if (!confirm(t('confirmDelete'))) return;
   const actions = { trade:'deleteTrade', area:'deleteArea', supervisor:'deleteSupervisor' };
   try {
-    const resp = await fetch(GAS_WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action: actions[type], name }) });
+    const url = `${GAS_WEBAPP_URL}?action=${actions[type]}&name=${encodeURIComponent(name)}`;
+    const resp = await fetch(url);
     const data = await resp.json();
     if (data.success) { await loadConfig(); showToast('成功', '已删除', 'success'); }
+    else showToast('错误', data.message, 'error');
+  } catch(e) { showToast('错误', '操作失败', 'error'); }
+}
+
+// ★ 更新（GET 方式）
+async function editItem(type, oldName) {
+  const newName = prompt('编辑名称:', oldName);
+  if (!newName || newName === oldName) return;
+  const actions = { trade:'updateTrade', area:'updateArea', supervisor:'updateSupervisor' };
+  try {
+    const url = `${GAS_WEBAPP_URL}?action=${actions[type]}&oldName=${encodeURIComponent(oldName)}&newName=${encodeURIComponent(newName)}`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.success) { await loadConfig(); showToast('成功', '已更新', 'success'); }
     else showToast('错误', data.message, 'error');
   } catch(e) { showToast('错误', '操作失败', 'error'); }
 }
@@ -448,13 +465,8 @@ function renderAdminLists() {
       <button class="del" onclick="deleteListItem('${type}','${v}')">🗑️</button></div></li>`).join('');
   });
 }
-function editItem(type, old) {
-  const n = prompt('编辑', old); if (!n || n===old) return;
-  const acts = { trade:'updateTrade', area:'updateArea', supervisor:'updateSupervisor' };
-  fetch(GAS_WEBAPP_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:acts[type],oldName:old,newName:n})})
-    .then(r => r.json()).then(d => { if (d.success) loadConfig(); else alert(d.message); });
-}
 
+// 工地配置保存仍用 POST（已全局 CORS）
 async function saveSiteConfig() {
   const payload = {
     action:'updateSiteConfig',
