@@ -6,12 +6,7 @@
   <title>工地智能打卡系统</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    :root {
-      --primary: #2563eb; --primary-dark: #1d4ed8; --success: #16a34a; --danger: #dc2626;
-      --warning: #f59e0b; --bg: #f8fafc; --card-bg: #ffffff; --text: #1e293b;
-      --text-light: #64748b; --border: #e2e8f0; --radius: 12px;
-      --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
-    }
+    :root { --primary: #2563eb; --primary-dark: #1d4ed8; --success: #16a34a; --danger: #dc2626; --warning: #f59e0b; --bg: #f8fafc; --card-bg: #ffffff; --text: #1e293b; --text-light: #64748b; --border: #e2e8f0; --radius: 12px; --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', 'Noto Sans Bengali', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 30px; }
     .header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
@@ -107,19 +102,16 @@
       <div class="clock-time" id="clockTime"></div>
     </div>
 
-    <!-- 今日打卡记录 -->
     <div class="card">
       <div class="card-title">📜 <span data-i18n="todayRecords">今日打卡记录</span></div>
       <ul class="record-list" id="recordList"></ul>
       <div class="next-action" id="nextActionHint"></div>
     </div>
 
-    <!-- 动态操作按钮（签到/签退按钮就在这里） -->
     <div class="card">
       <div class="btn-group" id="actionButtons"></div>
     </div>
 
-    <!-- 信息表单 -->
     <form id="attendanceForm" class="card" onsubmit="return false;">
       <div class="card-title" data-i18n="formTitle">📋 打卡信息</div>
       <div class="form-row">
@@ -138,7 +130,6 @@
       <div class="gps-info" id="gpsInfo"><span>📍</span><span data-i18n="gpsWaiting">等待GPS...</span><span class="coords" id="gpsCoords"></span></div>
     </form>
 
-    <!-- 管理员后台 -->
     <div class="admin-panel" id="adminPanel">
       <div class="admin-header">
         <span>🛠️ <span data-i18n="adminPanel">管理员后台</span></span>
@@ -312,7 +303,6 @@ async function loadConfig() {
     if (d.success) {
       siteConfig = d.siteConfig||{}; trades = d.trades||[]; areas = d.areas||[]; supervisors = d.supervisors||[];
       populateSelects(); renderAdminLists();
-      // 同步管理员面板里的工地配置输入框
       document.getElementById('siteName').value = siteConfig.siteName || '';
       document.getElementById('centerLat').value = siteConfig.centerLat || '';
       document.getElementById('centerLon').value = siteConfig.centerLon || '';
@@ -398,7 +388,6 @@ function toggleAdmin() {
   const panel = document.getElementById('adminPanel');
   panel.classList.toggle('show');
   if (!panel.classList.contains('show')) {
-    // 关闭面板时重置登录状态，确保下次打开需要重新输入密码
     isAdminLoggedIn = false;
     document.getElementById('adminContent').style.display = 'none';
     document.getElementById('adminAuth').style.display = 'block';
@@ -420,7 +409,6 @@ function switchAdminTab(tab) {
   if (tab === 'map') setTimeout(initMap, 100);
 }
 
-// 修复后的添加函数（带错误反馈）
 async function addListItem(type) {
   const map = { trade:['newTrade','addTrade'], area:['newArea','addArea'], supervisor:['newSupervisor','addSupervisor'] };
   const input = document.getElementById(map[type][0]);
@@ -437,7 +425,7 @@ async function addListItem(type) {
     const data = await resp.json();
     if (data.success) {
       input.value = '';
-      await loadConfig();  // 重新拉取配置并刷新列表
+      await loadConfig();
       showToast(t('success'), '已添加', 'success');
     } else {
       showToast(t('error'), data.message || '添加失败', 'error');
@@ -451,11 +439,7 @@ async function deleteListItem(type, name) {
   if (!confirm(t('confirmDelete'))) return;
   const actions = { trade:'deleteTrade', area:'deleteArea', supervisor:'deleteSupervisor' };
   try {
-    const resp = await fetch(GAS_WEBAPP_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ action: actions[type], name })
-    });
+    const resp = await fetch(GAS_WEBAPP_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action: actions[type], name }) });
     const data = await resp.json();
     if (data.success) { await loadConfig(); showToast('成功', '已删除', 'success'); }
     else showToast('错误', data.message, 'error');
